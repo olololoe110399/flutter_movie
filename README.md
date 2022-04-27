@@ -1,16 +1,65 @@
 # flutter_movie
+Đề tài: Flutter working with api
 
-A new Flutter project.
+## Thư viện sử dụng
 
-## Getting Started
+```yaml
 
-This project is a starting point for a Flutter application.
+dependencies:
+  retrofit: ^3.0.1+1 // gọi api
 
-A few resources to get you started if this is your first Flutter project:
+dev_dependencies:
+  retrofit_generator: ^4.0.1 // gen file api service
+  build_runner: ^2.1.10 // hỗ trợ gen file
+  json_serializable: ^6.1.6  // gen model parse json
+  json_annotation: ^4.4.0 // gắn annotation để nhận biết model cần gen 
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+```
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Hướng dẫn chạy project
+
+Tải các thử viện có trong pubspec.yml:
+
+```sh
+# flutter 
+flutter pub get
+```
+
+Gen các file *.g.dart bằng build_runner:
+
+```sh
+# flutter 
+flutter pub run build_runner build
+```
+
+=> Bật máy ảo lên và chạy
+
+## Hướng dẫn gen file
+
+Nếu sửa các file có dòng bên dưới thì gen lại bằng build_runner:
+
+`part '*.g.dart'`
+
+```sh
+# flutter 
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+## Demo
+
+![](demo.gif)
+
+## Directory structure
+
+```
+|-- web                <- Thư mục code web
+|-- tests              <- Unit tests
+|-- android            <- Thư mục android
+|-- ios                <- Thư mục ios
+|-- lib                <- Project data
+|   |-- models         <- Nơi chứa các model
+|   |-- resource       <- Làm việc với api
+|   |-- ui             <- Chứa các giao diện
+|-- pubspec.yml        <- Nơi lưu trữ packege thư viện
+|-- README.md          <- README của dự án
+```
