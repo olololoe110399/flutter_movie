@@ -1,43 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_movie/models/movie.dart';
-import 'package:flutter_movie/models/response_movies.dart';
-import 'package:flutter_movie/resources/movie_api_provider.dart';
-import 'package:dio/dio.dart';
-import 'package:flutter_movie/ui/favorite_list.dart';
+import 'package:flutter_movie/models/item.dart';
+import 'package:flutter_movie/resources/sql_hepler.dart';
 import 'package:flutter_movie/ui/movie_detail.dart';
 
-class MovieList extends StatefulWidget {
-  const MovieList({Key? key}) : super(key: key);
+class FavoritePage extends StatefulWidget {
+  const FavoritePage({Key? key}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() {
-    return _MovieListState();
+    return _FavoritePageState();
   }
 }
 
-class _MovieListState extends State<MovieList> {
-  final movieApiProvider = MovieApiProvider(Dio());
-
-  _handleNavigateFavorites() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const FavoritePage(),
-      ),
-    );
-  }
-
+class _FavoritePageState extends State<FavoritePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Popular"),
+        title: const Text("Favorites"),
       ),
       body: SafeArea(
         child: FutureBuilder(
-          future:
-              movieApiProvider.getMovieList('74c117ba95e20ba9d103ea81588c6880'),
-          builder: (context, AsyncSnapshot<ResponseMovies> snapshot) {
+          future: SQLHelper.getItems(),
+          builder: (context, AsyncSnapshot<List<Item>> snapshot) {
             if (!snapshot.hasData) {
               return const Center(
                 child: CircularProgressIndicator(),
@@ -49,16 +34,10 @@ class _MovieListState extends State<MovieList> {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.red,
-        onPressed: _handleNavigateFavorites,
-        child: const Icon(Icons.favorite),
-      ),
     );
   }
 
-  Widget buildList(ResponseMovies data) {
-    final results = data.results ?? [];
+  Widget buildList(List<Item> results) {
     return GridView.builder(
       itemCount: results.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -84,7 +63,7 @@ class _MovieListState extends State<MovieList> {
     );
   }
 
-  openDetailPage(Movie movie) {
+  openDetailPage(Item movie) {
     final page = MovieDetail(
       title: movie.title ?? '',
       posterUrl: movie.posterPath ?? '',
@@ -99,6 +78,8 @@ class _MovieListState extends State<MovieList> {
       MaterialPageRoute(builder: (context) {
         return page;
       }),
-    );
+    ).then((value) {
+      setState(() {});
+    });
   }
 }

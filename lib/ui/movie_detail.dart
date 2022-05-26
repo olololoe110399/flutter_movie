@@ -1,11 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_movie/models/response_trailers.dart';
 import 'package:flutter_movie/models/trailer.dart';
 import 'package:flutter_movie/resources/movie_api_provider.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_movie/resources/sql_hepler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MovieDetail extends StatefulWidget {
   final String posterUrl;
+  final String backdropUrl;
   final String description;
   final String releaseDate;
   final String title;
@@ -15,6 +20,7 @@ class MovieDetail extends StatefulWidget {
   const MovieDetail({
     Key? key,
     required this.posterUrl,
+    required this.backdropUrl,
     required this.description,
     required this.releaseDate,
     required this.title,
@@ -28,6 +34,50 @@ class MovieDetail extends StatefulWidget {
 
 class MovieDetailState extends State<MovieDetail> {
   final movieApiProvider = MovieApiProvider(Dio());
+
+  bool isFavorite = false;
+
+  toggleFavorite() async {
+    final item = await SQLHelper.getItem(widget.movieId);
+    if (item == null) {
+      await SQLHelper.createItem(
+        movieId: widget.movieId,
+        title: widget.title,
+        posterPath: widget.posterUrl,
+        backdropPath: widget.backdropUrl,
+        description: widget.description,
+        releaseDate: widget.releaseDate,
+        voteAverage: widget.voteAverage,
+      );
+    } else {
+      await SQLHelper.deleteItem(widget.movieId);
+    }
+    _updateFavorite(widget.movieId);
+  }
+
+  _updateFavorite(int id) async {
+    await SQLHelper.getItem(id).then((value) {
+      if (value != null) {
+        setState(() {
+          isFavorite = true;
+        });
+      } else {
+        setState(() {
+          isFavorite = false;
+        });
+      }
+    }).catchError((err) {
+      setState(() {
+        isFavorite = false;
+      });
+    });
+  }
+
+  @override
+  void initState() {
+    _updateFavorite(widget.movieId);
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +100,14 @@ class MovieDetailState extends State<MovieDetail> {
                     fit: BoxFit.cover,
                   ),
                 ),
+                actions: [
+                  IconButton(
+                    onPressed: () => toggleFavorite(),
+                    icon: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                    ),
+                  ),
+                ],
               ),
             ];
           },
@@ -165,32 +223,48 @@ class MovieDetailState extends State<MovieDetail> {
     );
   }
 
+  _launchURL(String key) async {
+    final url = Uri.parse("http://www.youtube.com/watch?v=$key");
+    if (Platform.isIOS) {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url);
+      }
+    } else {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url);
+      }
+    }
+  }
+
   Widget trailerItem(Trailer trailer) {
-    return Column(
-      children: <Widget>[
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            Image.network(
-              "https://img.youtube.com/vi/${trailer.key}/maxresdefault.jpg",
-              fit: BoxFit.cover,
-              height: 100,
-              errorBuilder: (context, error, stackTrace) => Container(
+    return GestureDetector(
+      onTap: () => _launchURL(trailer.key ?? ''),
+      child: Column(
+        children: <Widget>[
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Image.network(
+                "https://img.youtube.com/vi/${trailer.key}/maxresdefault.jpg",
+                fit: BoxFit.cover,
                 height: 100,
-                color: Colors.grey,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  height: 100,
+                  color: Colors.grey,
+                ),
               ),
-            ),
-            const Center(
-              child: Icon(Icons.play_circle_filled),
-            ),
-          ],
-        ),
-        Text(
-          trailer.name ?? '',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+              const Center(
+                child: Icon(Icons.play_circle_filled),
+              ),
+            ],
+          ),
+          Text(
+            trailer.name ?? '',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 }
